@@ -26,7 +26,7 @@ import (
 	"github.com/go-kit/kit/log/level"
 	"github.com/pkg/errors"
 	"github.com/prometheus-community/jiralert/pkg/alertmanager"
-	"github.com/prometheus-community/jiralert/pkg/config"
+	"github.com/alekseyzolot/jiralert/pkg/config"
 	"github.com/prometheus-community/jiralert/pkg/template"
 	"github.com/trivago/tgo/tcontainer"
 )
@@ -101,7 +101,27 @@ func (r *Receiver) Notify(data *alertmanager.Data, hashJiraLabel bool) (bool, er
 		}
 
 		if len(data.Alerts.Firing()) == 0 {
-			level.Debug(r.logger).Log("msg", "no firing alert; summary checked, nothing else to do.", "key", issue.Key, "label", issueGroupLabel)
+			if r.conf.CloseState == "" {
+				level.Info(r.logger).Log("msg", "no firing alert; summary checked, close_state not set.", "key", issue.Key, "label", issueGroupLabel)
+				issueDesc, err := r.tmpl.Execute(r.conf.Description, data)
+				if err != nil {
+					return false, errors.Wrap(err, "render issue description")
+				}
+				comment := &jira.Comment{
+					Body: issueDesc,
+				}
+				return r.addComment(issue.Key, comment)
+			}
+			level.Info(r.logger).Log("msg", "no firing alert; summary checked, closing issue.", "key", issue.Key, "label", issueGroupLabel)
+			issueDesc, err := r.tmpl.Execute(r.conf.Description, data)
+			if err != nil {
+				return false, errors.Wrap(err, "render issue description")
+			}
+			comment := &jira.Comment{
+				Body: issueDesc,
+			}
+			r.addComment(issue.Key, comment)
+			r.close(issue.Key)
 			return false, nil
 		}
 
