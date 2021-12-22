@@ -27,8 +27,8 @@ import (
 	"github.com/go-kit/kit/log"
 	"github.com/go-kit/kit/log/level"
 	"github.com/prometheus-community/jiralert/pkg/alertmanager"
-	"github.com/prometheus-community/jiralert/pkg/config"
-	"github.com/prometheus-community/jiralert/pkg/notify"
+	"github.com/alekseyzolot/jiralert/pkg/config"
+	"github.com/alekseyzolot/jiralert/pkg/notify"
 	"github.com/prometheus-community/jiralert/pkg/template"
 
 	_ "net/http/pprof"
