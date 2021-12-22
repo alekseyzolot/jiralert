@@ -39,6 +39,7 @@ type jiraIssueService interface {
 
 	Create(issue *jira.Issue) (*jira.Issue, *jira.Response, error)
 	UpdateWithOptions(issue *jira.Issue, opts *jira.UpdateQueryOptions) (*jira.Issue, *jira.Response, error)
+	AddComment(ticketID string, comment *jira.Comment) (*jira.Comment, *jira.Response, error)
 	DoTransition(ticketID, transitionID string) (*jira.Response, error)
 }
 
