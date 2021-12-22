@@ -111,6 +111,8 @@ func (r *Receiver) Notify(data *alertmanager.Data, hashJiraLabel bool) (bool, er
 					Body: issueDesc,
 				}
 				return r.addComment(issue.Key, comment)
+				r.close(issue.Key)
+				return false, nil
 			}
 			level.Info(r.logger).Log("msg", "no firing alert; summary checked, closing issue.", "key", issue.Key, "label", issueGroupLabel)
 			issueDesc, err := r.tmpl.Execute(r.conf.Description, data)
@@ -359,6 +361,18 @@ func (r *Receiver) updateDescription(issueKey string, description string) (bool,
 		return handleJiraErrResponse("Issue.UpdateWithOptions", resp, err, r.logger)
 	}
 	level.Debug(r.logger).Log("msg", "issue summary updated", "key", issue.Key, "id", issue.ID)
+	return false, nil
+}
+
+func (r *Receiver) addComment(issueKey string, comment *jira.Comment) (bool, error) {
+	level.Debug(r.logger).Log("msg", "adding new comment", "key", issueKey, "comment", comment)
+
+	comment, resp, err := r.client.AddComment(issueKey, comment)
+	if err != nil {
+		return handleJiraErrResponse("Issue.AddComment", resp, err, r.logger)
+	}
+
+	level.Debug(r.logger).Log("msg", "issue comment added", "key", issueKey)
 	return false, nil
 }
 
