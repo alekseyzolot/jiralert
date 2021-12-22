@@ -363,6 +363,29 @@ func (r *Receiver) reopen(issueKey string) (bool, error) {
 	return false, errors.Errorf("JIRA state %q does not exist or no transition possible for %s", r.conf.ReopenState, issueKey)
 }
 
+func (r *Receiver) close(issueKey string) (bool, error) {
+	transitions, resp, err := r.client.GetTransitions(issueKey)
+	if err != nil {
+		return handleJiraErrResponse("Issue.GetTransitions", resp, err, r.logger)
+	}
+
+	level.Debug(r.logger).Log("msg", "CloseState", "value", r.conf.CloseState)
+	for _, t := range transitions {
+		level.Debug(r.logger).Log("msg", "Iterate transition ", "Name", t.Name)
+		if t.Name == r.conf.CloseState {
+			level.Debug(r.logger).Log("msg", "transition (close)", "key", issueKey, "transitionID", t.ID)
+			resp, err = r.client.DoTransition(issueKey, t.ID)
+			if err != nil {
+				return handleJiraErrResponse("Issue.DoTransition", resp, err, r.logger)
+			}
+
+			level.Debug(r.logger).Log("msg", "closed", "key", issueKey)
+			return false, nil
+		}
+	}
+	return false, errors.Errorf("JIRA state %q does not exist or no transition possible for %s", r.conf.CloseState, issueKey)
+}
+
 func (r *Receiver) create(issue *jira.Issue) (bool, error) {
 	level.Debug(r.logger).Log("msg", "create", "issue", fmt.Sprintf("%+v", *issue.Fields))
 	newIssue, resp, err := r.client.Create(issue)
